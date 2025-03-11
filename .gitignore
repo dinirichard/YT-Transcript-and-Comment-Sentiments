@@ -176,4 +176,6 @@ dist
 
 
 youtube-data-379110-78031f8ee278.json
-# log/*
+log/*
+*.db
+*.db.*

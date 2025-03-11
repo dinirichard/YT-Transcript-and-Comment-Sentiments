@@ -8,9 +8,10 @@ import {
     getLogger,
 } from "@logtape/logtape";
 import { getFileSink } from "@logtape/file";
-import { getCommentData } from "./google.auth";
+import { getYoutubeInfo } from "./google.auth";
 import * as utils from "./utils";
-import { getYoutubeTranscript } from "./transcript";
+import { Database } from "./database";
+import type { DuckDBResultReader } from "@duckdb/node-api/lib/DuckDBResultReader";
 
 const logger = getLogger(["Dbg", "App", "Main"]);
 
@@ -55,7 +56,7 @@ await (async () => {
             {
                 category: "Dbg",
                 lowestLevel: "debug",
-                sinks: ["console", "appLogFile"],
+                sinks: ["console", "appLogFile", "errorLogFile"],
             },
             {
                 category: ["App", "Err"],
@@ -73,9 +74,55 @@ await (async () => {
         "https://www.youtube.com/watch?v=mgoCr7STbh4"
     );
 
-    await getCommentData(videoId);
     // const transcript = await getYoutubeTranscript(videoId);
     // logger.debug`Transcript: ${transcript}`;
+    try {
+        const db = await Database.create(); // Use the static factory method
+        // Now you can use the database connection:
+        // const results = await db.query("SELECT 42 AS answer;");
+        await db.createTables();
+        let ddd: DuckDBResultReader = await db.queryGet(
+            `SELECT * FROM comments;`
+        );
+        logger.debug`Comments: ${ddd}`;
+
+        if (videoSaved.currentRowCount !== 1) {
+            const youtubeInfo = await getYoutubeInfo(videoId);
+
+            await db.insertVideo(
+                videoId,
+                youtubeInfo.videoTitle,
+                youtubeInfo.thumbnailUrl
+            );
+            await db.insertTranscript(videoId, youtubeInfo.transcript);
+            await db.appendComments(videoId, youtubeInfo.comments);
+            logger.debug(`Data has been saved.`);
+        } else {
+            logger.debug(`Video data already exist`);
+            ddd = await db.queryGet(`
+            SELECT
+                v.id,
+                v.title,
+                v.thumbnailUrl,
+                c.id AS comment_id,
+                c.textDisplay,
+                c.parentId,
+                c.likeCount,
+                c.publishedAt,
+                c.totalReplyCount
+            FROM
+                videos v
+            LEFT JOIN
+                comments c ON v.id = c.videoId
+            WHERE
+                v.id = '${videoId}';
+        `);
+            logger.debug`Comments: ${ddd.getRows()}`;
+        }
+        db.close();
+    } catch (error) {
+        logger.error`Error: ${error}`;
+    }
 
     console.log("App shutdown");
 })();

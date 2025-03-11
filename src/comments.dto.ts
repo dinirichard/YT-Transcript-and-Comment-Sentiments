@@ -67,6 +67,13 @@ export interface CommentData {
     totalReplyCount?: number; // Optional, as replies won't have this.
 }
 
+export interface YoutubeInfo {
+    videoTitle: string;
+    transcript: string;
+    comments: CommentData[];
+    thumbnailUrl: string;
+}
+
 export function extractCommentData(
     commentThreadList: CommentThreadList
 ): CommentData[] {
