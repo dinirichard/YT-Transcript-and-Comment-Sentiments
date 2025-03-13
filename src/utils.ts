@@ -74,7 +74,7 @@ export async function createBatchEmbeddings(
                     content: { parts: [{ text }], role: "user" },
                 })),
             };
-            logger.debug`Batch request: ${batchEmbedContentRequest.requests}`;
+            // logger.debug`Batch request: ${batchEmbedContentRequest.requests}`;
 
             const result = await model.batchEmbedContents(
                 batchEmbedContentRequest

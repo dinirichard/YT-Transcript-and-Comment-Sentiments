@@ -264,7 +264,6 @@ export class CommentsProcessing extends BaseNode {
             );
 
         const parentComments = transEmbedTable.getRows();
-        logger.debug`parentComments: ${parentComments}`;
         const yamlOutput = [];
 
         for (const parent of parentComments) {
@@ -278,7 +277,6 @@ export class CommentsProcessing extends BaseNode {
                 );
 
             const replies = repliesRes.getRows();
-            logger.debug`replies: ${replies}`;
             const commentEntry: { mainComment: string; replies?: string[] } = {
                 mainComment: parent[1] as string,
             };
@@ -292,16 +290,74 @@ export class CommentsProcessing extends BaseNode {
             yamlOutput.push(commentEntry);
         }
 
-        logger.debug`ParentChild comments mixed: ${yamlOutput}`;
+        const commEmbedTable: DuckDBResultReader =
+            await sharedState.db.queryGet(
+                `SELECT *
+                    FROM comments_embeddings
+                    WHERE videoId = '${sharedState.videoId}';
+            `
+            );
 
-        return { parentComments, parentChildComments: yamlOutput };
+        logger.debug`commEmbedTable: ${commEmbedTable}`;
+        logger.debug`parentComments length: ${parentComments.length}`;
+        logger.debug`yamlOutput length: ${yamlOutput.length}`;
+
+        return {
+            parentComments,
+            parentChildComments: yamlOutput,
+            embeddExists: commEmbedTable.currentRowCount,
+        };
     }
 
-    execCore(prepResult: any): Promise<any> {
-        logger.debug`ParentChild comments mixed: ${prepResult}`;
-        throw new Error("Method not implemented.");
+    async execCore(prepResult: any): Promise<any> {
+        logger.debug`Start embedding parent child comments`;
+
+        if (prepResult.embeddExists > 0) {
+            logger.info`Comments embeddings have already been generated and saved.`;
+            return [];
+        }
+
+        const yamlComments: string[] = prepResult.parentChildComments.map(
+            (comments: { mainComment: string; replies?: string[] }) =>
+                yaml.stringify(comments)
+        );
+        logger.debug`yamlComments: ${yamlComments.length}`;
+
+        const commentEmbeddings: ContentEmbedding[] =
+            await createBatchEmbeddings(yamlComments);
+
+        logger.debug`commentEmbeddings: ${commentEmbeddings.length}`;
+        logger.info`Retrieved comments embeddings.`;
+        return commentEmbeddings;
     }
-    post(): Promise<string> {
-        throw new Error("Method not implemented.");
+    async post(
+        prepResult: any,
+        execResult: ContentEmbedding[],
+        sharedState: any
+    ): Promise<string> {
+        if (prepResult.embeddExists > 0) {
+            logger.info`Comments embeddings have already been generated and saved.`;
+            return DEFAULT_ACTION;
+        }
+
+        for (let i = 0; i < execResult.length; i++) {
+            const yamlComments: string[] = prepResult.parentChildComments.map(
+                (comments: { mainComment: string; replies?: string[] }) =>
+                    yaml.stringify(comments)
+            );
+            await sharedState.db.connect.run(
+                `
+                            insert into comments_embeddings (videoId, commentId, text, embedding)
+                                values (?, ?, ?, list_value(${execResult[i].values.map(() => "?").join(", ")}));
+                            `,
+                [
+                    sharedState.videoId as string,
+                    prepResult.parentComments[i][0] as string,
+                    yamlComments[i],
+                    ...execResult[i].values,
+                ]
+            );
+        }
+        return DEFAULT_ACTION;
     }
 }

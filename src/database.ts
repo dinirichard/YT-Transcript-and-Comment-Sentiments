@@ -40,6 +40,11 @@ export class Database {
     async createTables() {
         try {
             await this.connect.run(`
+                INSTALL vss;
+                LOAD vss;
+            `);
+
+            await this.connect.run(`
                 create table if not exists videos (
                     id              VARCHAR not null PRIMARY KEY,
                     title           VARCHAR,
@@ -84,12 +89,13 @@ export class Database {
             await this.connect.run(`
                 CREATE TABLE if not exists comments_embeddings (
                     id              UUID PRIMARY KEY DEFAULT UUID(),
+                    videoId         VARCHAR not null,
                     commentId       VARCHAR not null,
                     text            VARCHAR,                       
-                    embedding       FLOAT[],                   
-                    modelName       VARCHAR,                  
+                    embedding       FLOAT[],                
                     createdAt       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (commentId) REFERENCES comments(commentId)
+                    FOREIGN KEY (commentId) REFERENCES comments(commentId),
+                    FOREIGN KEY (videoId) REFERENCES videos(id)
                 );
             `);
         } catch (error) {

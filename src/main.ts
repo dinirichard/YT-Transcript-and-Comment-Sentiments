@@ -22,22 +22,6 @@ import { Flow } from "./pocket";
 
 const logger = getLogger(["Dbg", "App", "Main"]);
 
-// declare module "bun" {
-//     interface Env {
-//         AWESOME: string;
-//         YOUTUBE_API_KEY: string;
-//         YOUTUBE_ACCESS_TOKEN: string;
-//     }
-// }
-
-// console.log("Hello via Bun!");
-// console.log(Bun.env.YOUTUBE_ACCESS_TOKEN);
-// console.log(Bun.env.AWESOME);
-
-// await authenticate();
-// console.log("Server running on port 3000");
-// console.log("Server running on port 4000");
-
 await (async () => {
     await configure({
         sinks: {
@@ -72,68 +56,8 @@ await (async () => {
             },
         ],
     });
-    // Launch the browser and open a new blank page;
 
-    // console.log(Bun.env.YOUTUBE_ACCESS_TOKEN);
-    // console.log(Bun.env.AWESOME);
-
-    // const videoId = utils.retrieveVideoId(
-    //     "https://www.youtube.com/watch?v=mgoCr7STbh4"
-    // );
-
-    // const transcript = await getYoutubeTranscript(videoId);
-    // logger.debug`Transcript: ${transcript}`;
     try {
-        // const db = await Database.create(); // Use the static factory method
-        // // Now you can use the database connection:
-        // // const results = await db.query("SELECT 42 AS answer;");
-        // await db.createTables();
-        // const videoSaved: DuckDBResultReader = await db.queryGet(
-        //     `   SELECT 1
-        //         FROM videos
-        //         WHERE id = '${videoId}';
-        //     `
-        // );
-        // let ddd: DuckDBResultReader = await db.queryGet(
-        //     `SELECT * FROM comments;`
-        // );
-        // logger.debug`Comments: ${ddd}`;
-        // if (videoSaved.currentRowCount !== 1) {
-        //     const youtubeInfo = await getYoutubeInfo(videoId);
-        //     await db.insertVideo(
-        //         videoId,
-        //         youtubeInfo.videoTitle,
-        //         youtubeInfo.thumbnailUrl
-        //     );
-        //     await db.insertTranscript(videoId, youtubeInfo.transcript);
-        //     await db.appendComments(videoId, youtubeInfo.comments);
-        //     logger.debug(`Data has been saved.`);
-        // } else {
-        //     logger.debug(`Video data already exist`);
-        //     // c.id AS comment_id,
-        //     // c.textDisplay,
-        //     // c.parentId,
-        //     // c.likeCount,
-        //     // c.publishedAt,
-        //     // c.totalReplyCount
-        //     // LEFT JOIN
-        //     //     comments c ON v.id = c.videoId
-        //     //     LIMIT
-        //     //         5;
-        //     ddd = await db.queryGet(`
-        //         SELECT
-        //             v.id,
-        //             v.title,
-        //             v.thumbnailUrl,
-        //         FROM
-        //             videos v
-        //         WHERE
-        //             v.id = '${videoId}'
-        //     `);
-        //     logger.debug`Comments Json: ${ddd.getRows()[0][1]}`;
-        // }
-        // db.close();
-
         const youtube = new ProcessYoutubeURL(
             "https://www.youtube.com/watch?v=mgoCr7STbh4"
         );
