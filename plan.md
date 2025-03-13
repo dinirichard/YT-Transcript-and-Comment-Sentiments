@@ -314,3 +314,5 @@ For the project—where an LLM is used to both summarize transcript topics and p
 Each of these fields not only supports robust sentiment analysis when used individually but also complements the overall process of mapping user comments to the topics derived from the transcript. This integration is crucial when using LLMs for deeper context since you may also want to include meta-information (such as engagement or timeline data) in your prompts to the LLM, thereby enriching its understanding of the comment sentiment relative to the topics.
 
 Would you like to explore specific strategies for integrating these fields into the LLM prompts or further details on scaling with asynchronous job processing and caching?
+
+![alt text](image.png)

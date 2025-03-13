@@ -2,7 +2,7 @@
 import { getLogger } from "@logtape/logtape";
 import { cloneDeep } from "lodash";
 
-const logger = getLogger(["Dbg", "App", "DB"]);
+const logger = getLogger(["Dbg", "App", "Pck"]);
 
 export const DEFAULT_ACTION = "default"; // Default action for
 

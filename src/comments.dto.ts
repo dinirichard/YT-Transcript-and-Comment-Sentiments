@@ -68,6 +68,7 @@ export interface CommentData {
 }
 
 export interface YoutubeInfo {
+    videoId: string;
     videoTitle: string;
     transcript: string;
     comments: CommentData[];

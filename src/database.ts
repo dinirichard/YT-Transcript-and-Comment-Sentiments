@@ -25,9 +25,12 @@ export class Database {
     }
 
     // You could add other methods here to interact with the database, e.g.,
-    async queryPost(sql: string): Promise<DuckDBMaterializedResult> {
+    async queryPost(
+        sql: string,
+        values: any[]
+    ): Promise<DuckDBMaterializedResult> {
         // Example query method
-        return await this.connect.run(sql);
+        return await this.connect.run(sql, values);
     }
     async queryGet(sql: string): Promise<DuckDBResultReader> {
         // Example query method
@@ -46,7 +49,7 @@ export class Database {
 
             await this.connect.run(`
                 create table if not exists comments (
-                    id              VARCHAR not null PRIMARY KEY,
+                    commentId       VARCHAR not null PRIMARY KEY,
                     videoId         VARCHAR not null,
                     textDisplay     VARCHAR,
                     parentId        VARCHAR, 
@@ -59,10 +62,34 @@ export class Database {
 
             await this.connect.run(`
                 create table if not exists transcripts (
-                    videoId     VARCHAR not null,
-                    original    VARCHAR not null ,
-                    summarized  VARCHAR,
+                    videoId         VARCHAR not null,
+                    original        VARCHAR not null ,
+                    summarized      VARCHAR,
                     FOREIGN KEY (videoId) REFERENCES videos(id)
+                );
+            `);
+
+            await this.connect.run(`
+                CREATE TABLE if not exists transcripts_embeddings (
+                    id              VARCHAR PRIMARY KEY,
+                    videoId         VARCHAR not null,
+                    parentId        VARCHAR,             
+                    text            VARCHAR,                       
+                    embedding       FLOAT[], 
+                    createdAt       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (videoId) REFERENCES videos(id)
+                );
+            `);
+
+            await this.connect.run(`
+                CREATE TABLE if not exists comments_embeddings (
+                    id              UUID PRIMARY KEY DEFAULT UUID(),
+                    commentId       VARCHAR not null,
+                    text            VARCHAR,                       
+                    embedding       FLOAT[],                   
+                    modelName       VARCHAR,                  
+                    createdAt       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (commentId) REFERENCES comments(commentId)
                 );
             `);
         } catch (error) {
@@ -103,6 +130,30 @@ export class Database {
     }
 
     async appendComments(videoId: string, comments: CommentData[]) {
+        try {
+            const appender = await this.connect.createAppender("comments");
+
+            comments.forEach((com) => {
+                const date = new Date(com.publishedAt).getDate();
+                appender.appendVarchar(com.id);
+                appender.appendVarchar(videoId);
+                appender.appendVarchar(com.textDisplay);
+                appender.appendVarchar(com.parentId ?? "");
+                appender.appendInteger(com.likeCount);
+                appender.appendTimestampTZ(
+                    new DuckDBTimestampTZValue(BigInt(date))
+                );
+                appender.appendInteger(com.totalReplyCount ?? 0);
+                appender.endRow();
+            });
+
+            appender.close();
+        } catch (error) {
+            logger.error`Error appending comments Table: ${error}`;
+        }
+    }
+
+    async appendCommentsEmbeddings(videoId: string, comments: CommentData[]) {
         try {
             const appender = await this.connect.createAppender("comments");
 

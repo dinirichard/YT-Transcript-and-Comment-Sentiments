@@ -42,6 +42,7 @@ export async function getYoutubeInfo(videoId: string) {
         // logger.debug`${commentThreads.items[0].snippet}`;
 
         return {
+            videoId,
             videoTitle: videoDetails.videoTitle,
             comments: commentData,
             transcript: transcript.content,
